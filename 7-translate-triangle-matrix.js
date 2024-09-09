@@ -1,14 +1,7 @@
 const vsSource = `
 attribute vec4 aPosition;
-uniform vec4 uTranslate;
-uniform float uAngle;
 void main() {
-  float cosB = cos(uAngle);
-  float sinB = sin(uAngle);
-  vec4 pos = aPosition;
-  pos.x = aPosition.x * cosB - aPosition.y * sinB;
-  pos.y = aPosition.x * sinB + aPosition.y * cosB;
-  gl_Position = pos + uTranslate;
+  gl_Position = aPosition;
 }`;
 
 const fsSource = `
@@ -65,14 +58,7 @@ if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
 }
 gl.useProgram(program);
 
-const angle = -Math.PI / 2;
-
 const aPosition = gl.getAttribLocation(program, "aPosition");
-const uTranslate = gl.getUniformLocation(program, "uTranslate");
-const uAngle = gl.getUniformLocation(program, "uAngle");
-
-gl.uniform4f(uTranslate, 0.5, 0.5, 0.0, 0.0);
-gl.uniform1f(uAngle, angle);
 
 const vertices = new Float32Array([0.0, 0.5, -0.5, -0.5, 0.5, -0.5]);
 const n = 3;
