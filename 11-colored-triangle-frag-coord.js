@@ -32,12 +32,9 @@ const n = 3;
 const vertices = new Float32Array([0.0, 0.5, -0.5, -0.5, 0.5, -0.5]);
 bindBuffer({
   gl,
-  bufferType: gl.ARRAY_BUFFER,
   data: vertices,
-  dataMemoryType: gl.STATIC_DRAW,
   attribute: aPosition,
   size: 2,
-  type: gl.FLOAT,
 });
 
 const uWidth = gl.getUniformLocation(program, "uWidth");

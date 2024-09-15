@@ -1,5 +1,3 @@
-let _gl = null;
-
 /**
  * Creates a WebGL shader.
  * @param {WebGLRenderingContext} gl - The WebGL context.
@@ -22,13 +20,15 @@ const createShader = (gl, type, source) => {
 /**
  * Creates a WebGL program.
  * @param {Object} options
+ * @param {WebGLRenderingContext} [options.gl] - The WebGL context.
  * @param {string} options.elementName - The name of the canvas element.
  * @param {string} options.contextName - The name of the context.
  * @param {string} options.vertexShader - The vertex shader.
  * @param {string} options.fragmentShader - The fragment shader.
- * @returns {Object} The WebGL context and program.
- * @returns {WebGLRenderingContext} Object.gl - The WebGL context.
- * @returns {WebGLProgram} Object.program - The WebGL program.
+ * @returns {{
+ *  gl: WebGLRenderingContext,
+ *  program: WebGLProgram,
+ * }} The WebGL context and program.
  * @throws {string} The error message.
  */
 const createWebGLProgram = ({
@@ -43,9 +43,7 @@ const createWebGLProgram = ({
     (event) => console.log(event.statusMessage),
     false
   );
-
   const gl = canvas.getContext(contextName);
-  _gl = gl;
 
   // gl.clearColor(0.0, 0.0, 0.0, 1.0);
   // gl.clear(gl.COLOR_BUFFER_BIT);
@@ -70,7 +68,7 @@ const createWebGLProgram = ({
 
   gl.useProgram(program);
 
-  return { gl, program };
+  return { gl: gl, program };
 };
 
 /**
@@ -88,25 +86,11 @@ const createWebGLProgram = ({
  * @param {number} options.stride - The stride of the attribute.
  * @param {number} options.offset - The offset of the attribute.
  */
-const bindBuffer = ({
-  gl,
-  buffer,
-  bufferType,
-  data,
-  dataMemoryType,
-  attribute,
-  size,
-  type,
-  normalized = false,
-  stride = 0,
-  offset = 0,
-}) => {
-  const cGl = gl ? gl : _gl;
-  const cBuffer = buffer ? buffer : cGl.createBuffer();
-
-  gl.bindBuffer(bufferType, cBuffer);
-  gl.bufferData(bufferType, data, dataMemoryType);
-  gl.vertexAttribPointer(attribute, size, type, normalized, stride, offset);
+const bindBuffer = ({ gl, data, attribute, size, type }) => {
+  const buffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+  gl.vertexAttribPointer(attribute, size, type || gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(attribute);
   gl.bindBuffer(gl.ARRAY_BUFFER, null);
 };
@@ -117,7 +101,7 @@ const bindBuffer = ({
  * @param {WebGLRenderingContext} options.gl - The WebGL context.
  * @param {WebGLBuffer} options.buffer - The buffer to bind.
  * @param {number} options.bufferType - The type of buffer to bind.
- * @param {TypedArray} options.data - The data to bind.
+ * @param {Float32Array} options.data - The data to bind.
  * @param {number} options.dataMemoryType - The memory type of the data.
  * @param {Array<{
  *  attribute: number,
@@ -128,26 +112,77 @@ const bindBuffer = ({
  *  offset?: number,
  * }>} options.attributesData - The attributes data to bind.
  */
-const bindBuffers = ({
-  gl,
-  buffer,
-  bufferType,
-  data,
-  dataMemoryType,
-  attributesData,
-}) => {
-  const cGl = gl ? gl : _gl;
-  const cBuffer = buffer ? buffer : cGl.createBuffer();
-
-  gl.bindBuffer(bufferType, cBuffer);
-  gl.bufferData(bufferType, data, dataMemoryType);
-
+const bindBuffers = ({ gl, data, attributesData }) => {
+  const buffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+  const FSIZE = data.BYTES_PER_ELEMENT;
   attributesData.forEach(
-    ({ attribute, size, type, normalized = false, stride = 0, offset = 0 }) => {
-      gl.vertexAttribPointer(attribute, size, type, normalized, stride, offset);
+    ({
+      attribute,
+      size,
+      type = gl.FLOAT,
+      normalized = false,
+      stride = 0,
+      offset = 0,
+    }) => {
+      gl.vertexAttribPointer(
+        attribute,
+        size,
+        type,
+        normalized,
+        stride * FSIZE,
+        offset * FSIZE
+      );
       gl.enableVertexAttribArray(attribute);
     }
   );
 
   gl.bindBuffer(gl.ARRAY_BUFFER, null);
+};
+
+/**
+ * Creates a 2D texture.
+ * @param {Object} options
+ * @param {WebGLRenderingContext} options.gl - The WebGL context.
+ * @param {number} [options.textureCell] - The texture cell.
+ * @param {number} [options.minFilterType] - The min filter type.
+ * @param {number} [options.textureDataType] - The texture data type.
+ * @param {number} [options.textureDataFormat] - The texture data format.
+ * @param {WebGLUniformLocation} options.textureLocation - The texture location.
+ * @param {number} options.textureLocationIndex - The texture location index.
+ * @param {string} options.imageSrc - The image source.
+ */
+const create2DTexture = ({
+  gl,
+  textureCell,
+  minFilterType,
+  textureDataType,
+  textureDataFormat,
+  textureLocation,
+  textureLocationIndex,
+  imageSrc,
+}) => {
+  const texture = gl.createTexture();
+  const image = new Image();
+  image.onload = () => {
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+    gl.activeTexture(textureCell || gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texParameteri(
+      gl.TEXTURE_2D,
+      gl.TEXTURE_MIN_FILTER,
+      minFilterType || gl.NEAREST
+    );
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      textureDataFormat || gl.RGBA,
+      textureDataFormat || gl.RGBA,
+      textureDataType || gl.UNSIGNED_BYTE,
+      image
+    );
+    gl.uniform1i(textureLocation, textureLocationIndex);
+  };
+  image.src = imageSrc;
 };
