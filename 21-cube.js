@@ -21,6 +21,8 @@ void main() {
 const { gl, program } = createWebGLProgram({
   vertexShader,
   fragmentShader,
+  enableDdepthBuffer: true,
+  enablePoligonOffset: true,
 });
 
 const clearColor = [0.0, 0.0, 0.0, 1.0];
@@ -29,38 +31,37 @@ gl.clearColor(...clearColor);
 const aPosition = gl.getAttribLocation(program, "aPosition");
 const aColor = gl.getAttribLocation(program, "aColor");
 
-const n = 9;
+// Create a cube
+//    v6----- v5
+//   /|      /|
+//  v1------v0|
+//  | |     | |
+//  | |v7---|-|v4
+//  |/      |/
+//  v2------v3
 // prettier-ignore
 const vertices = new Float32Array([
     // Vertex coordinates and color
-     0.0,  1.0,  -4.0,  0.4,  1.0,  0.4, // The back green one
-    -0.5, -1.0,  -4.0,  0.4,  1.0,  0.4,
-     0.5, -1.0,  -4.0,  1.0,  0.4,  0.4, 
-
-     0.0,  1.0,  -2.0,  1.0,  1.0,  0.4, // The middle yellow one
-    -0.5, -1.0,  -2.0,  1.0,  1.0,  0.4,
-     0.5, -1.0,  -2.0,  1.0,  0.4,  0.4, 
-
-     0.0,  1.0,   0.0,  0.4,  0.4,  1.0,  // The front blue one 
-    -0.5, -1.0,   0.0,  0.4,  0.4,  1.0,
-     0.5, -1.0,   0.0,  1.0,  0.4,  0.4, 
+     1.0,  1.0,  1.0,     1.0,  1.0,  1.0,  // v0 White
+    -1.0,  1.0,  1.0,     1.0,  0.0,  1.0,  // v1 Magenta
+    -1.0, -1.0,  1.0,     1.0,  0.0,  0.0,  // v2 Red
+     1.0, -1.0,  1.0,     1.0,  1.0,  0.0,  // v3 Yellow
+     1.0, -1.0, -1.0,     0.0,  1.0,  0.0,  // v4 Green
+     1.0,  1.0, -1.0,     0.0,  1.0,  1.0,  // v5 Cyan
+    -1.0,  1.0, -1.0,     0.0,  0.0,  1.0,  // v6 Blue
+    -1.0, -1.0, -1.0,     0.0,  0.0,  0.0   // v7 Black
 ]);
 
 // prettier-ignore
-// const vertices = new Float32Array([
-//   // Vertex coordinates and color
-//    0.0,  1.0,   0.0,  0.4,  0.4,  1.0, // The front blue one
-//   -0.5, -1.0,   0.0,  0.4,  0.4,  1.0,
-//    0.5, -1.0,   0.0,  1.0,  0.4,  0.4,
-
-//    0.0,  1.0,  -2.0,  1.0,  1.0,  0.4, // The middle yellow one
-//   -0.5, -1.0,  -2.0,  1.0,  1.0,  0.4,
-//    0.5, -1.0,  -2.0,  1.0,  0.4,  0.4,
-
-//    0.0,  1.0,  -4.0,  0.4,  1.0,  0.4, // The back green one
-//   -0.5, -1.0,  -4.0,  0.4,  1.0,  0.4,
-//    0.5, -1.0,  -4.0,  1.0,  0.4,  0.4,
-// ]);
+const indices = new Uint8Array([
+    // Indices of the vertices
+    0, 1, 2,   0, 2, 3,    // front
+    0, 3, 4,   0, 4, 5,    // right
+    0, 5, 6,   0, 6, 1,    // up
+    1, 6, 7,   1, 7, 2,    // left
+    7, 4, 3,   7, 3, 2,    // down
+    4, 7, 6,   4, 6, 5     // back
+]);
 
 bindBuffers({
   gl,
@@ -79,20 +80,20 @@ bindBuffers({
       offset: 3,
     },
   ],
+  indices,
 });
 
 const viewMatrix = new Matrix4();
 // prettier-ignore
 viewMatrix.setLookAt(
   // eye position
-  0, 0, 5,
+  3, 3, 7,
   // look-at position
   0, 0, 0,
   // up direction
   0, 1, 0
 );
 const modelMatrix = new Matrix4();
-modelMatrix.setRotate(0, 0, 0, 1);
 const modelViewMatrix = new Matrix4();
 modelViewMatrix.set(viewMatrix).multiply(modelMatrix);
 
@@ -109,25 +110,14 @@ const draw = ({ verticesCount, primitive, newClearColor }) => {
     gl.clearColor(...newClearColor);
   }
 
-  gl.clear(gl.COLOR_BUFFER_BIT);
-
-  modelMatrix.setTranslate(0.75, 0, 0);
-  modelViewMatrix.set(viewMatrix).multiply(modelMatrix);
-  gl.uniformMatrix4fv(uModelViewMatrix, false, modelViewMatrix.elements);
-
-  gl.drawArrays(primitive, 0, verticesCount);
-
-  modelMatrix.setTranslate(-0.75, 0, 0);
-  modelViewMatrix.set(viewMatrix).multiply(modelMatrix);
-  gl.uniformMatrix4fv(uModelViewMatrix, false, modelViewMatrix.elements);
-
-  gl.drawArrays(primitive, 0, verticesCount);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.drawElements(primitive, verticesCount, gl.UNSIGNED_BYTE, 0);
   requestAnimationFrame(() =>
     draw({ verticesCount, primitive, newClearColor })
   );
 };
 
 draw({
-  verticesCount: n,
+  verticesCount: indices.length,
   primitive: gl.TRIANGLES,
 });

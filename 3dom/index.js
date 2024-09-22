@@ -25,6 +25,8 @@ const createShader = (gl, type, source) => {
  * @param {string} options.contextName - The name of the context.
  * @param {string} options.vertexShader - The vertex shader.
  * @param {string} options.fragmentShader - The fragment shader.
+ * @param {boolean} options.enableDepthBuffer - Whether to enable the depth buffer.
+ * @param {boolean} options.enablePoligonOffset - Whether to enable the poligon offset.
  * @returns {{
  *  gl: WebGLRenderingContext,
  *  program: WebGLProgram,
@@ -36,6 +38,8 @@ const createWebGLProgram = ({
   contextName = "webgl",
   vertexShader,
   fragmentShader,
+  enableDdepthBuffer = false,
+  enablePoligonOffset = false,
 }) => {
   const canvas = document.getElementById(elementName);
   canvas.addEventListener(
@@ -51,6 +55,10 @@ const createWebGLProgram = ({
   // gl.clear(gl.DEPTH_BUFFER_BIT);
   // gl.clearStencil(0);
   // gl.clear(gl.STENCIL_BUFFER_BIT);
+
+  if (enableDdepthBuffer) {
+    gl.enable(gl.DEPTH_TEST);
+  }
 
   const vertex = createShader(gl, gl.VERTEX_SHADER, vertexShader);
   const fragment = createShader(gl, gl.FRAGMENT_SHADER, fragmentShader);
@@ -75,23 +83,23 @@ const createWebGLProgram = ({
  * Binds a buffer to a WebGL context.
  * @param {Object} options
  * @param {WebGLRenderingContext} options.gl - The WebGL context.
- * @param {WebGLBuffer} options.buffer - The buffer to bind.
- * @param {number} options.bufferType - The type of buffer to bind.
- * @param {TypedArray} options.data - The data to bind.
- * @param {number} options.dataMemoryType - The memory type of the data.
+ * @param {Float32Array} options.data - The data to bind.
  * @param {number} options.attribute - The attribute to bind.
  * @param {number} options.size - The size of the attribute.
- * @param {number} options.type - The type of the attribute.
- * @param {boolean} options.normalized - Whether the attribute is normalized.
- * @param {number} options.stride - The stride of the attribute.
- * @param {number} options.offset - The offset of the attribute.
+ * @param {number} [options.type] - The type of the attribute.
+ * @param {Uint8Array | Uint16Array} [options.indices] - The indices to bind.
  */
-const bindBuffer = ({ gl, data, attribute, size, type }) => {
+const bindBuffer = ({ gl, data, attribute, size, type, indices }) => {
   const buffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
   gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
   gl.vertexAttribPointer(attribute, size, type || gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(attribute);
+  if (indices) {
+    const indicesBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+  }
   gl.bindBuffer(gl.ARRAY_BUFFER, null);
 };
 
@@ -99,10 +107,7 @@ const bindBuffer = ({ gl, data, attribute, size, type }) => {
  * Binds buffers to a WebGL context.
  * @param {Object} options
  * @param {WebGLRenderingContext} options.gl - The WebGL context.
- * @param {WebGLBuffer} options.buffer - The buffer to bind.
- * @param {number} options.bufferType - The type of buffer to bind.
  * @param {Float32Array} options.data - The data to bind.
- * @param {number} options.dataMemoryType - The memory type of the data.
  * @param {Array<{
  *  attribute: number,
  *  size: number,
@@ -111,8 +116,9 @@ const bindBuffer = ({ gl, data, attribute, size, type }) => {
  *  stride?: number,
  *  offset?: number,
  * }>} options.attributesData - The attributes data to bind.
+ * @param {Uint8Array | Uint16Array} [options.indices] - The indices to bind.
  */
-const bindBuffers = ({ gl, data, attributesData }) => {
+const bindBuffers = ({ gl, data, attributesData, indices }) => {
   const buffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
   gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
@@ -137,7 +143,11 @@ const bindBuffers = ({ gl, data, attributesData }) => {
       gl.enableVertexAttribArray(attribute);
     }
   );
-
+  if (indices) {
+    const indicesBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+  }
   gl.bindBuffer(gl.ARRAY_BUFFER, null);
 };
 

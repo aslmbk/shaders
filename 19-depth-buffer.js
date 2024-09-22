@@ -21,6 +21,7 @@ void main() {
 const { gl, program } = createWebGLProgram({
   vertexShader,
   fragmentShader,
+  enableDdepthBuffer: true,
 });
 
 const clearColor = [0.0, 0.0, 0.0, 1.0];
@@ -32,35 +33,19 @@ const aColor = gl.getAttribLocation(program, "aColor");
 const n = 9;
 // prettier-ignore
 const vertices = new Float32Array([
-    // Vertex coordinates and color
-     0.0,  1.0,  -4.0,  0.4,  1.0,  0.4, // The back green one
-    -0.5, -1.0,  -4.0,  0.4,  1.0,  0.4,
-     0.5, -1.0,  -4.0,  1.0,  0.4,  0.4, 
+  // Vertex coordinates and color
+   0.0,  1.0,   0.0,  0.4,  0.4,  1.0, // The front blue one
+  -0.5, -1.0,   0.0,  0.4,  0.4,  1.0,
+   0.5, -1.0,   0.0,  1.0,  0.4,  0.4,
 
-     0.0,  1.0,  -2.0,  1.0,  1.0,  0.4, // The middle yellow one
-    -0.5, -1.0,  -2.0,  1.0,  1.0,  0.4,
-     0.5, -1.0,  -2.0,  1.0,  0.4,  0.4, 
+   0.0,  1.0,  -2.0,  1.0,  1.0,  0.4, // The middle yellow one
+  -0.5, -1.0,  -2.0,  1.0,  1.0,  0.4,
+   0.5, -1.0,  -2.0,  1.0,  0.4,  0.4,
 
-     0.0,  1.0,   0.0,  0.4,  0.4,  1.0,  // The front blue one 
-    -0.5, -1.0,   0.0,  0.4,  0.4,  1.0,
-     0.5, -1.0,   0.0,  1.0,  0.4,  0.4, 
+   0.0,  1.0,  -4.0,  0.4,  1.0,  0.4, // The back green one
+  -0.5, -1.0,  -4.0,  0.4,  1.0,  0.4,
+   0.5, -1.0,  -4.0,  1.0,  0.4,  0.4,
 ]);
-
-// prettier-ignore
-// const vertices = new Float32Array([
-//   // Vertex coordinates and color
-//    0.0,  1.0,   0.0,  0.4,  0.4,  1.0, // The front blue one
-//   -0.5, -1.0,   0.0,  0.4,  0.4,  1.0,
-//    0.5, -1.0,   0.0,  1.0,  0.4,  0.4,
-
-//    0.0,  1.0,  -2.0,  1.0,  1.0,  0.4, // The middle yellow one
-//   -0.5, -1.0,  -2.0,  1.0,  1.0,  0.4,
-//    0.5, -1.0,  -2.0,  1.0,  0.4,  0.4,
-
-//    0.0,  1.0,  -4.0,  0.4,  1.0,  0.4, // The back green one
-//   -0.5, -1.0,  -4.0,  0.4,  1.0,  0.4,
-//    0.5, -1.0,  -4.0,  1.0,  0.4,  0.4,
-// ]);
 
 bindBuffers({
   gl,
@@ -109,7 +94,7 @@ const draw = ({ verticesCount, primitive, newClearColor }) => {
     gl.clearColor(...newClearColor);
   }
 
-  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
   modelMatrix.setTranslate(0.75, 0, 0);
   modelViewMatrix.set(viewMatrix).multiply(modelMatrix);
