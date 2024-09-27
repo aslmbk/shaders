@@ -1,4 +1,4 @@
-const vertexShader = `
+const vertexShader = /* glsl */ `
 attribute vec4 aPosition;
 attribute vec4 aUv;
 varying vec4 vUv;
@@ -7,7 +7,7 @@ void main() {
   vUv = aUv;
 }`;
 
-const fragmentShader = `
+const fragmentShader = /* glsl */ `
 precision mediump float;
 uniform sampler2D uTexture;
 uniform sampler2D uTexture2;

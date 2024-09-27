@@ -1,12 +1,23 @@
 const vertexShader = /* glsl */ `
 attribute vec4 aPosition;
 attribute vec4 aColor;
+attribute vec4 aNormal;
 uniform mat4 uModelViewMatrix;
 uniform mat4 uProjectionMatrix;
+uniform vec3 uLightDirection;
+uniform vec3 uLightColor;
+uniform vec3 uAmbientLight;
 varying vec4 vColor;
 void main() {
   gl_Position = uProjectionMatrix * uModelViewMatrix * aPosition;
-  vColor = aColor;
+  vec3 normal = normalize(vec3(aNormal));
+  // Calculate the dot product of the light direction and the normal
+  float nDotL = max(dot(uLightDirection, normal), 0.0);
+  // Calculate the color due to diffuse reflection
+  vec3 diffuse = uLightColor * vec3(aColor) * nDotL;
+  // Calculate the color due to ambient reflection
+  vec3 ambient = uAmbientLight * vec3(aColor);
+  vColor = vec4(diffuse + ambient, aColor.a);
 }`;
 
 const fragmentShader = /* glsl */ `
@@ -30,6 +41,7 @@ gl.clearColor(...clearColor);
 
 const aPosition = gl.getAttribLocation(program, "aPosition");
 const aColor = gl.getAttribLocation(program, "aColor");
+const aNormal = gl.getAttribLocation(program, "aNormal");
 
 // Create a cube
 //    v6----- v5
@@ -53,13 +65,24 @@ const vertices = new Float32Array([
 
 // prettier-ignore
 const colors = new Float32Array([
-    // Colors
-   0.4, 0.4, 1.0,  0.4, 0.4, 1.0,  0.4, 0.4, 1.0,  0.4, 0.4, 1.0,  // v0-v1-v2-v3 front(blue)
-   0.4, 1.0, 0.4,  0.4, 1.0, 0.4,  0.4, 1.0, 0.4,  0.4, 1.0, 0.4,  // v0-v3-v4-v5 right(green)
-   1.0, 0.4, 0.4,  1.0, 0.4, 0.4,  1.0, 0.4, 0.4,  1.0, 0.4, 0.4,  // v0-v5-v6-v1 up(red)
-   1.0, 1.0, 0.4,  1.0, 1.0, 0.4,  1.0, 1.0, 0.4,  1.0, 1.0, 0.4,  // v1-v6-v7-v2 left
-   1.0, 1.0, 1.0,  1.0, 1.0, 1.0,  1.0, 1.0, 1.0,  1.0, 1.0, 1.0,  // v7-v4-v3-v2 down
-   0.4, 1.0, 1.0,  0.4, 1.0, 1.0,  0.4, 1.0, 1.0,  0.4, 1.0, 1.0   // v4-v7-v6-v5 back
+  // Colors
+  1, 0, 0,   1, 0, 0,   1, 0, 0,  1, 0, 0,     // v0-v1-v2-v3 front
+  1, 0, 0,   1, 0, 0,   1, 0, 0,  1, 0, 0,     // v0-v3-v4-v5 right
+  1, 0, 0,   1, 0, 0,   1, 0, 0,  1, 0, 0,     // v0-v5-v6-v1 up
+  1, 0, 0,   1, 0, 0,   1, 0, 0,  1, 0, 0,     // v1-v6-v7-v2 left
+  1, 0, 0,   1, 0, 0,   1, 0, 0,  1, 0, 0,     // v7-v4-v3-v2 down
+  1, 0, 0,   1, 0, 0,   1, 0, 0,  1, 0, 0,    // v4-v7-v6-v5 back
+]);
+
+// prettier-ignore
+const normals = new Float32Array([
+  // Normal
+  0.0, 0.0, 1.0,   0.0, 0.0, 1.0,   0.0, 0.0, 1.0,   0.0, 0.0, 1.0,  // v0-v1-v2-v3 front
+  1.0, 0.0, 0.0,   1.0, 0.0, 0.0,   1.0, 0.0, 0.0,   1.0, 0.0, 0.0,  // v0-v3-v4-v5 right
+  0.0, 1.0, 0.0,   0.0, 1.0, 0.0,   0.0, 1.0, 0.0,   0.0, 1.0, 0.0,  // v0-v5-v6-v1 up
+ -1.0, 0.0, 0.0,  -1.0, 0.0, 0.0,  -1.0, 0.0, 0.0,  -1.0, 0.0, 0.0,  // v1-v6-v7-v2 left
+  0.0,-1.0, 0.0,   0.0,-1.0, 0.0,   0.0,-1.0, 0.0,   0.0,-1.0, 0.0,  // v7-v4-v3-v2 down
+  0.0, 0.0,-1.0,   0.0, 0.0,-1.0,   0.0, 0.0,-1.0,   0.0, 0.0,-1.0   // v4-v7-v6-v5 back
 ]);
 
 // prettier-ignore
@@ -88,6 +111,13 @@ bindBuffer({
   size: 3,
 });
 
+bindBuffer({
+  gl,
+  data: normals,
+  attribute: aNormal,
+  size: 3,
+});
+
 const viewMatrix = new Matrix4();
 // prettier-ignore
 viewMatrix.setLookAt(
@@ -105,15 +135,30 @@ modelViewMatrix.set(viewMatrix).multiply(modelMatrix);
 const projectionMatrix = new Matrix4();
 projectionMatrix.setPerspective(30, gl.canvas.width / gl.canvas.height, 1, 100);
 
+const lightDirection = new Vector3([0.5, 3.0, 4.0]);
+lightDirection.normalize();
+const lightColor = new Vector3([1.0, 1.0, 1.0]);
+const ambientLight = new Vector3([0.2, 0.2, 0.2]);
+
 const uModelViewMatrix = gl.getUniformLocation(program, "uModelViewMatrix");
 const uProjectionMatrix = gl.getUniformLocation(program, "uProjectionMatrix");
+const uLightDirection = gl.getUniformLocation(program, "uLightDirection");
+const uLightColor = gl.getUniformLocation(program, "uLightColor");
+const uAmbientLight = gl.getUniformLocation(program, "uAmbientLight");
 gl.uniformMatrix4fv(uModelViewMatrix, false, modelViewMatrix.elements);
 gl.uniformMatrix4fv(uProjectionMatrix, false, projectionMatrix.elements);
+gl.uniform3fv(uLightDirection, lightDirection.elements);
+gl.uniform3fv(uLightColor, lightColor.elements);
+gl.uniform3fv(uAmbientLight, ambientLight.elements);
 
 const draw = ({ verticesCount, primitive, newClearColor }) => {
   if (newClearColor) {
     gl.clearColor(...newClearColor);
   }
+
+  // modelMatrix.rotate(1, 0, 1, 0);
+  // modelViewMatrix.set(viewMatrix).multiply(modelMatrix);
+  // gl.uniformMatrix4fv(uModelViewMatrix, false, modelViewMatrix.elements);
 
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   gl.drawElements(primitive, verticesCount, gl.UNSIGNED_BYTE, 0);

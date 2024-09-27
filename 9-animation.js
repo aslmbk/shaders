@@ -1,11 +1,11 @@
-const vsSource = `
+const vsSource = /* glsl */ `
 uniform mat4 uTransformMatrix;
 attribute vec4 aPosition;
 void main() {
   gl_Position = uTransformMatrix * aPosition;
 }`;
 
-const fsSource = `
+const fsSource = /* glsl */ `
 precision mediump float;
 void main() {
   gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);

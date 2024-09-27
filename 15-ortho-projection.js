@@ -1,4 +1,4 @@
-const vertexShader = `
+const vertexShader = /* glsl */ `
 attribute vec4 aPosition;
 attribute vec4 aColor;
 uniform mat4 uProjectionMatrix;
@@ -8,7 +8,7 @@ void main() {
   vColor = aColor;
 }`;
 
-const fragmentShader = `
+const fragmentShader = /* glsl */ `
 #ifdef GL_ES
 precision mediump float;
 #endif

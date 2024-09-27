@@ -1,4 +1,4 @@
-const vertexShader = `
+const vertexShader = /* glsl */ `
 attribute vec4 aPosition;
 attribute float aPointSize;
 attribute vec4 aColor;
@@ -9,7 +9,7 @@ void main() {
   vColor = aColor;
 }`;
 
-const fragmentShader = `
+const fragmentShader = /* glsl */ `
 precision mediump float;
 varying vec4 vColor;
 void main() {

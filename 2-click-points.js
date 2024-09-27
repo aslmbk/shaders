@@ -1,4 +1,4 @@
-const vsSource = `
+const vsSource = /* glsl */ `
 attribute vec4 aPosition;
 attribute float aPointSize;
 varying vec4 vColor;
@@ -8,7 +8,7 @@ void main() {
   gl_PointSize = aPointSize;
 }`;
 
-const fsSource = `
+const fsSource = /* glsl */ `
 precision mediump float;
 varying vec4 vColor;
 void main() {

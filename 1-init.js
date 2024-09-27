@@ -1,4 +1,4 @@
-const vsSource = `
+const vsSource = /* glsl */ `
 attribute vec4 aPosition;
 attribute float aPointSize;
 void main() {
@@ -6,7 +6,7 @@ void main() {
   gl_PointSize = aPointSize;
 }`;
 
-const fsSource = `
+const fsSource = /* glsl */ `
 void main() {
   gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
 }`;

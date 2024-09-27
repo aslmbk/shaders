@@ -1,10 +1,10 @@
-const vertexShader = `
+const vertexShader = /* glsl */ `
 attribute vec4 aPosition;
 void main() {
   gl_Position = aPosition;
 }`;
 
-const fragmentShader = `
+const fragmentShader = /* glsl */ `
 precision mediump float;
 uniform float uWidth;
 uniform float uHeight;
