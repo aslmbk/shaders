@@ -38,8 +38,8 @@ const createWebGLProgram = ({
   contextName = "webgl",
   vertexShader,
   fragmentShader,
-  enableDdepthBuffer = false,
-  enablePoligonOffset = false,
+  enableDepthBuffer = false,
+  preserveDrawingBuffer = false,
 }) => {
   const canvas = document.getElementById(elementName);
   canvas.addEventListener(
@@ -47,7 +47,7 @@ const createWebGLProgram = ({
     (event) => console.log(event.statusMessage),
     false
   );
-  const gl = canvas.getContext(contextName);
+  const gl = canvas.getContext(contextName, { preserveDrawingBuffer });
 
   // gl.clearColor(0.0, 0.0, 0.0, 1.0);
   // gl.clear(gl.COLOR_BUFFER_BIT);
@@ -56,7 +56,7 @@ const createWebGLProgram = ({
   // gl.clearStencil(0);
   // gl.clear(gl.STENCIL_BUFFER_BIT);
 
-  if (enableDdepthBuffer) {
+  if (enableDepthBuffer) {
     gl.enable(gl.DEPTH_TEST);
   }
 

@@ -21,7 +21,7 @@ void main() {
 const { gl, program } = createWebGLProgram({
   vertexShader,
   fragmentShader,
-  enableDdepthBuffer: true,
+  enableDepthBuffer: true,
 });
 
 const clearColor = [0.0, 0.0, 0.0, 1.0];

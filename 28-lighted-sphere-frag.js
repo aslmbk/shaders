@@ -39,7 +39,7 @@ void main() {
 const { gl, program } = createWebGLProgram({
   vertexShader,
   fragmentShader,
-  enableDdepthBuffer: true,
+  enableDepthBuffer: true,
   enablePoligonOffset: true,
 });
 
