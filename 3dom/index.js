@@ -40,6 +40,7 @@ const createWebGLProgram = ({
   fragmentShader,
   enableDepthBuffer = false,
   preserveDrawingBuffer = false,
+  enablePoligonOffset = false,
 }) => {
   const canvas = document.getElementById(elementName);
   canvas.addEventListener(

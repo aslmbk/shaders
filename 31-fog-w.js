@@ -8,7 +8,6 @@ uniform mat4 uNormalMatrix;
 uniform vec3 uLightDirection;
 uniform vec3 uLightColor;
 uniform vec3 uAmbientLight;
-uniform vec4 uEyePosition;
 uniform vec3 uColor;
 varying vec4 vColor;
 varying float vDist;
@@ -19,7 +18,7 @@ void main() {
     vec3 diffuse = uLightColor * uColor * nDotL;
     vec3 ambient = uAmbientLight * uColor;
     vColor = vec4(diffuse + ambient, 1.0);
-    vDist = distance(uModelMatrix * aPosition, uEyePosition);
+    vDist = gl_Position.w;
 }`;
 
 const fragmentShader = /* glsl */ `
@@ -109,7 +108,7 @@ bindBuffer({
   size: 3,
 });
 
-const eyePosition = new Float32Array([3.0, 3.0, 7.0, 1.0]);
+let eyePositionZ = 7.0;
 const color = new Vector3([1.0, 1.0, 1.0]);
 const fogColor = new Float32Array([0.137, 0.231, 0.423]);
 // Distance of fog [where fog starts, where fog completely covers object]
@@ -124,7 +123,7 @@ const viewMatrix = new Matrix4();
 // prettier-ignore
 viewMatrix.setLookAt(
   // eye position
-  eyePosition[0], eyePosition[1], eyePosition[2],
+  3.0, 3.0, eyePositionZ,
   // look-at position
   0, 0, 0,
   // up direction
@@ -138,7 +137,6 @@ const normalMatrix = new Matrix4();
 normalMatrix.setInverseOf(modelMatrix);
 normalMatrix.transpose();
 
-const uEyePosition = gl.getUniformLocation(program, "uEyePosition");
 const uFogColor = gl.getUniformLocation(program, "uFogColor");
 const uFogDist = gl.getUniformLocation(program, "uFogDist");
 const uColor = gl.getUniformLocation(program, "uColor");
@@ -149,7 +147,6 @@ const uNormalMatrix = gl.getUniformLocation(program, "uNormalMatrix");
 const uLightDirection = gl.getUniformLocation(program, "uLightDirection");
 const uLightColor = gl.getUniformLocation(program, "uLightColor");
 const uAmbientLight = gl.getUniformLocation(program, "uAmbientLight");
-gl.uniform4fv(uEyePosition, eyePosition);
 gl.uniform3fv(uFogColor, fogColor);
 gl.uniform2fv(uFogDist, fogDist);
 gl.uniform3fv(uColor, color.elements);
@@ -164,10 +161,10 @@ gl.uniform3fv(uAmbientLight, ambientLight.elements);
 document.onkeydown = (e) => {
   switch (e.key) {
     case "ArrowUp":
-      eyePosition[2] += 0.5;
+      eyePositionZ += 0.2;
       break;
     case "ArrowDown":
-      eyePosition[2] -= 0.5;
+      eyePositionZ -= 0.2;
       break;
   }
 };
@@ -175,18 +172,7 @@ document.onkeydown = (e) => {
 gl.clearColor(...fogColor, 1.0);
 
 const draw = () => {
-  gl.uniform4fv(uEyePosition, eyePosition);
-  viewMatrix.setLookAt(
-    eyePosition[0],
-    eyePosition[1],
-    eyePosition[2],
-    0,
-    0,
-    0,
-    0,
-    1,
-    0
-  );
+  viewMatrix.setLookAt(3.0, 3.0, eyePositionZ, 0, 0, 0, 0, 1, 0);
   gl.uniformMatrix4fv(uViewMatrix, false, viewMatrix.elements);
 
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);

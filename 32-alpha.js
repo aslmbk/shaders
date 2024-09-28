@@ -8,34 +8,24 @@ uniform mat4 uNormalMatrix;
 uniform vec3 uLightDirection;
 uniform vec3 uLightColor;
 uniform vec3 uAmbientLight;
-uniform vec4 uEyePosition;
 uniform vec3 uColor;
 varying vec4 vColor;
-varying float vDist;
 void main() {
-    gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix * aPosition;
-    vec3 normal = normalize(vec3(uNormalMatrix * aNormal));
-    float nDotL = max(dot(uLightDirection, normal), 0.0);
-    vec3 diffuse = uLightColor * uColor * nDotL;
-    vec3 ambient = uAmbientLight * uColor;
-    vColor = vec4(diffuse + ambient, 1.0);
-    vDist = distance(uModelMatrix * aPosition, uEyePosition);
+  gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix * aPosition;
+  vec3 normal = normalize(vec3(uNormalMatrix * aNormal));
+  float nDotL = max(dot(uLightDirection, normal), 0.0);
+  vec3 diffuse = uLightColor * uColor * nDotL;
+  vec3 ambient = uAmbientLight * uColor;
+  vColor = vec4(diffuse + ambient, 1.0);
 }`;
 
 const fragmentShader = /* glsl */ `
 #ifdef GL_ES
 precision mediump float;
 #endif
-uniform vec3 uFogColor;
-uniform vec2 uFogDist;
 varying vec4 vColor;
-varying float vDist;
 void main() {
-    // Calculation of fog factor (factor becomes smaller as it goes further away from eye point)
-    float factor = clamp((uFogDist.y - vDist) / (uFogDist.y - uFogDist.x), 0.0, 1.0);
-    // Stronger fog as it gets further: uFogColor * (1 - factor) + vColor * factor
-    vec3 color = mix(uFogColor, vec3(vColor), factor);
-    gl_FragColor = vec4(color, vColor.a);
+  gl_FragColor = vec4(vColor.rgb, 0.4);
 }`;
 
 const { gl, program } = createWebGLProgram({
@@ -45,6 +35,9 @@ const { gl, program } = createWebGLProgram({
   enablePoligonOffset: true,
   preserveDrawingBuffer: true,
 });
+
+gl.enable(gl.BLEND);
+gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
 const clearColor = [0.0, 0.0, 0.0, 1.0];
 gl.clearColor(...clearColor);
@@ -109,22 +102,11 @@ bindBuffer({
   size: 3,
 });
 
-const eyePosition = new Float32Array([3.0, 3.0, 7.0, 1.0]);
-const color = new Vector3([1.0, 1.0, 1.0]);
-const fogColor = new Float32Array([0.137, 0.231, 0.423]);
-// Distance of fog [where fog starts, where fog completely covers object]
-const fogDist = new Float32Array([10, 15]);
-
-const lightDirection = new Vector3([0.5, 3.0, 4.0]);
-lightDirection.normalize();
-const lightColor = new Vector3([1.0, 1.0, 1.0]);
-const ambientLight = new Vector3([0.2, 0.2, 0.2]);
-
 const viewMatrix = new Matrix4();
 // prettier-ignore
 viewMatrix.setLookAt(
   // eye position
-  eyePosition[0], eyePosition[1], eyePosition[2],
+  3, 3, 7,
   // look-at position
   0, 0, 0,
   // up direction
@@ -138,9 +120,13 @@ const normalMatrix = new Matrix4();
 normalMatrix.setInverseOf(modelMatrix);
 normalMatrix.transpose();
 
-const uEyePosition = gl.getUniformLocation(program, "uEyePosition");
-const uFogColor = gl.getUniformLocation(program, "uFogColor");
-const uFogDist = gl.getUniformLocation(program, "uFogDist");
+const lightDirection = new Vector3([0.5, 3.0, 4.0]);
+lightDirection.normalize();
+const lightColor = new Vector3([1.0, 1.0, 1.0]);
+const ambientLight = new Vector3([0.2, 0.2, 0.2]);
+
+const color = new Vector3([1.0, 0.0, 0.0]);
+
 const uColor = gl.getUniformLocation(program, "uColor");
 const uModelMatrix = gl.getUniformLocation(program, "uModelMatrix");
 const uViewMatrix = gl.getUniformLocation(program, "uViewMatrix");
@@ -149,9 +135,6 @@ const uNormalMatrix = gl.getUniformLocation(program, "uNormalMatrix");
 const uLightDirection = gl.getUniformLocation(program, "uLightDirection");
 const uLightColor = gl.getUniformLocation(program, "uLightColor");
 const uAmbientLight = gl.getUniformLocation(program, "uAmbientLight");
-gl.uniform4fv(uEyePosition, eyePosition);
-gl.uniform3fv(uFogColor, fogColor);
-gl.uniform2fv(uFogDist, fogDist);
 gl.uniform3fv(uColor, color.elements);
 gl.uniformMatrix4fv(uViewMatrix, false, viewMatrix.elements);
 gl.uniformMatrix4fv(uModelMatrix, false, modelMatrix.elements);
@@ -161,34 +144,7 @@ gl.uniform3fv(uLightDirection, lightDirection.elements);
 gl.uniform3fv(uLightColor, lightColor.elements);
 gl.uniform3fv(uAmbientLight, ambientLight.elements);
 
-document.onkeydown = (e) => {
-  switch (e.key) {
-    case "ArrowUp":
-      eyePosition[2] += 0.5;
-      break;
-    case "ArrowDown":
-      eyePosition[2] -= 0.5;
-      break;
-  }
-};
-
-gl.clearColor(...fogColor, 1.0);
-
 const draw = () => {
-  gl.uniform4fv(uEyePosition, eyePosition);
-  viewMatrix.setLookAt(
-    eyePosition[0],
-    eyePosition[1],
-    eyePosition[2],
-    0,
-    0,
-    0,
-    0,
-    1,
-    0
-  );
-  gl.uniformMatrix4fv(uViewMatrix, false, viewMatrix.elements);
-
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_BYTE, 0);
   requestAnimationFrame(draw);
